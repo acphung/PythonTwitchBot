@@ -6,22 +6,34 @@ load_dotenv()
 HOST = "irc.chat.twitch.tv"
 PORT = 6667
 
-print("Running Bot...", flush=True)
+
+def printFlush(msg=""):
+    print(msg, flush=True)
+
+
+def sendMsg(msg=""):
+    irc.send((msg + "\r\n").encode())
+
+
+def recvMsg():
+    return irc.recv(2048).decode()
+
+
+printFlush("Running Bot...")
 
 irc = socket.socket()
 irc.connect((HOST, PORT))
-irc.send(("PASS " + os.getenv("TWITCH_AUTH") + "\r\n").encode())
-irc.send(("NICK " + os.getenv("TWITCH_NICK") + "\r\n").encode())
+sendMsg("PASS " + os.getenv("TWITCH_AUTH"))
+sendMsg("NICK " + os.getenv("TWITCH_NICK"))
 
 while True:
-    msg = irc.recv(2048).decode()
+    msg = recvMsg()
     if msg.find("PING") != -1:
-        print("Received Ping!\nSending Pong Back!", flush=True)
-        irc.send(("PONG :tmi.twitch.tv\r\n").encode())
+        printFlush("Received Ping!\nSending Pong Back!")
+        sendMsg("PONG :tmi.twitch.tv")
         break
     elif msg.find(":>") != -1:
-        print(msg, flush=True)
-        # break
+        printFlush(msg)
 
-print()
-print("SUCCESSFULLY CONNECTED TO TWITCH IRC")
+printFlush()
+printFlush("SUCCESSFULLY CONNECTED TO TWITCH IRC!")
