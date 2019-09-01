@@ -2,10 +2,13 @@ from dotenv import load_dotenv
 import os
 import socket
 
+# Getting the environment variable needed to authenticate the bot
 load_dotenv()
 HOST = "irc.chat.twitch.tv"
 PORT = 6667
 DEBUG = True
+
+# --- Utility Functions --- #
 
 
 def printFlush(msg=""):
@@ -19,15 +22,19 @@ def sendMsg(msg=""):
 def recvMsg():
     return irc.recv(2048).decode()
 
+# --- Main --- #
 
+
+# Start the bot & create the socket & connect to twitch irc server
 printFlush("Running Bot...")
-
 irc = socket.socket()
 irc.settimeout(30)
 irc.connect((HOST, PORT))
 sendMsg("PASS " + os.getenv("TWITCH_AUTH"))
 sendMsg("NICK " + os.getenv("TWITCH_NICK"))
 
+
+# Start listening to twitch irc server
 while True:
     try:
         msg = recvMsg()
@@ -38,6 +45,7 @@ while True:
     if DEBUG:
         printFlush("DEBUG: [ " + msg + " ]")
 
+    # Handle the various response from the server
     if msg.find("PING") != -1:
         printFlush("*** Received Ping! Sending Pong Back!")
         sendMsg("PONG :tmi.twitch.tv")
@@ -60,5 +68,7 @@ while True:
         printFlush("*** Bot has successfully left the channel!")
         break
 
+
+# Closing the socket and ending the connection to the twitch irc server
 printFlush("*** Bot is now shutting down!")
 irc.close()
