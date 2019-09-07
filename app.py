@@ -1,15 +1,23 @@
 from dotenv import load_dotenv
+import json
 import os
 import socket
 import re
+import sys
+
 
 # Getting the environment variable needed to authenticate the bot
 load_dotenv()
 HOST = "irc.chat.twitch.tv"
 PORT = 6667
 DEBUG = True
-CHANNELS = ["zyfae"]
 
+# Loading channels the bot will join
+with open("config.json") as configFile:
+    CONFIG = json.load(configFile)
+CHANNELS = CONFIG["channels"]
+
+print("CONFIG CHANNELS: {}".format(CHANNELS))
 # --- Utility Functions --- #
 
 
@@ -63,6 +71,7 @@ def getMsg(msg):
 
 def joinChannels(channels):
     # Join the twitch chat of each of the channel specified
+    printFlush("*** Attempting to Join Channels...")
     for channel in channels:
         if channel[0] != "#":
             channel = "#" + channel
@@ -71,16 +80,21 @@ def joinChannels(channels):
         try:
             msg = recvMsg()
         except socket.timeout:
-            printFlush("ERROR: The Socket Timeout!")
             msg = ""
+            printFlush("ERROR: Could not connect to {}'s chat!".format(channel))
 
-        if msg == "":
+        if msg:
             if msg.find(":End of /NAMES list") != -1:
-                printFlush("*** SUCCESSFULLY JOINED THE CHANNEL")
-                sendMsg("PRIVMSG " + channel + " :Hello, This is a Test Bot!")
+                printFlush(
+                    "*** SUCCESSFULLY JOINED THE CHANNEL: {}".format(channel))
+                sendMsg("PRIVMSG {} :Hello, This is a Test Bot!".format(channel))
 
 
 # --- Main --- #
+
+if not CHANNELS:
+    print("Bot will not start. No channels specified in the config file!")
+    sys.exit()
 
  # Start the bot & create the socket & connect to twitch irc server
 printFlush("Running Bot...")
@@ -111,8 +125,9 @@ while True:
         printFlush(msg)
         printFlush()
         printFlush("*** SUCCESSFULLY CONNECTED TO TWITCH IRC!")
-        printFlush("*** Attempting to Join Channel...")
-        sendMsg("JOIN #zyfae")
+        joinChannels(CHANNELS)
+        # printFlush("*** Attempting to Join Channel...")
+        # sendMsg("JOIN #zyfae")
     elif msg.find(":End of /NAMES list") != -1:
         printFlush("*** SUCCESSFULLY JOINED THE CHANNEL")
         sendMsg("PRIVMSG #zyfae :Hello, This is a Test Bot!")
